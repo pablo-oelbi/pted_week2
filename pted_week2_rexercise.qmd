@@ -1,0 +1,54 @@
+# Exercise 2:
+```{r}
+# Load packages
+library("readr") 
+library("sf") 
+library("dplyr")
+library("ggplot2")
+```
+## Task 1: Import your data
+```{r}
+wildschwein_BE <- read_delim("wildschwein_BE_2056.csv")
+wildschwein_BE <- st_as_sf(wildschwein_BE, coords = c("E", "N"), crs = 2056, remove = FALSE)
+# Note:
+# - that this dataset is already converted to EPSG 2056
+# - the coordinates are stored in the columns (E/N)
+# - setting remove = FALSE preserves the original (E/N) columns, which come in handy later on
+```
+
+## Task 2: Getting an overview
+
+Q: How many individuals were tracked?
+```{r}
+unique(wildschwein_BE$TierName)
+```
+A: 3 Individuas, Sabi, Rosa and Ruth
+
+
+Q: For how long were the individual tracked? Are there gaps?
+Q: Were all individuals tracked concurrently or sequentially?
+```{r}
+ggplot(wildschwein_BE, aes(DatetimeUTC, TierName)) +
+  geom_point()
+```
+A: All three boars were tracked a couple of months. Sabi were tracked for the longest time (Sept. 2014 - Aug. 2015). But there is a long time where all three boars were tracked concurrently. There are no gaps.
+
+
+Q: What is the temporal sampling interval between the locations?
+```{r}
+wildschwein_BE <- group_by(wildschwein_BE, TierID) # Group so that the time difference is not calculated between different animals.
+wildschwein_BE <- mutate(wildschwein_BE, timelag = as.numeric(difftime(lead(DatetimeUTC), DatetimeUTC))) # Create a new column (timelag) that is a function of existing variables. Here the time difference between two consecutive data points.
+wildschwein_BE
+ggplot(wildschwein_BE, aes(timelag/60)) +
+  geom_histogram(binwidth = 1) +
+  lims(x = c(0, 5000/60)) + 
+  scale_y_log10()
+
+
+wildschwein_BE |> 
+  filter(DatetimeUTC > "2014-12-07" & DatetimeUTC < "2014-12-08") |> 
+  ggplot(aes(DatetimeUTC, timelag, color = TierName)) +
+  geom_point() +
+  geom_line()
+```
+A: There are different temporal sampling intervals. They vary between a few minutes and over an hour. Most of the sampling intervals are around 15 minutes followed by 60 minutes. Looking at individual days, it can be seen that the sampling interval is greater during the day than at night. Probably because the wild boars are mostly asleep during the day and to save power at the receiver.
