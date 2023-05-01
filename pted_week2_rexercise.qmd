@@ -195,12 +195,14 @@ posmo <- read_delim("data/posmo_data.csv", ",")
 posmo <- posmo|> 
   drop_na(lon_x)
 
-posmo <- st_as_sf(posmo, coords = c("lon_x", "lat_y"), crs = 4326, remove = FALSE)
+posmo <- st_as_sf(posmo, coords = c("lon_x", "lat_y"), crs = 4326)
 posmo <- st_transform(posmo, 2056)
 
 ggplot(posmo)+
-  geom_sf() +
-  theme_bw() +
-  labs(x = "Easting (m)", y = "Northing (m)")
+  geom_sf()
+
+tmap_mode("view")
+tm_shape(posmo) +
+  tm_dots(col = "transport_mode", size = 0.1) 
 ```
 
