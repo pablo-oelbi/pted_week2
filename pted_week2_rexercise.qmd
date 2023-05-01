@@ -7,6 +7,7 @@ library("dplyr")
 library("ggplot2")
 library("tmap")
 library("zoo")
+library("tidyr")
 ```
 ## Task 1: Import your data
 ```{r}
@@ -186,5 +187,20 @@ ggplot() +
   geom_path(data=caro, aes(x = DatetimeUTC, y = rm9, color= "rm9"))+
   theme_classic() +
   labs(x="Zeitpunkt",y="rollmean")
+```
+
+## Task 7: Explore your movement data
+```{r}
+posmo <- read_delim("data/posmo_data.csv", ",")
+posmo <- posmo|> 
+  drop_na(lon_x)
+
+posmo <- st_as_sf(posmo, coords = c("lon_x", "lat_y"), crs = 4326, remove = FALSE)
+posmo <- st_transform(posmo, 2056)
+
+ggplot(posmo)+
+  geom_sf() +
+  theme_bw() +
+  labs(x = "Easting (m)", y = "Northing (m)")
 ```
 
