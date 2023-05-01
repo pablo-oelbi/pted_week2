@@ -5,6 +5,7 @@ library("readr")
 library("sf") 
 library("dplyr")
 library("ggplot2")
+library("tmap")
 ```
 ## Task 1: Import your data
 ```{r}
@@ -53,7 +54,7 @@ wildschwein_BE |>
 ```
 A: There are different temporal sampling intervals. They vary between a few minutes and over an hour. Most of the sampling intervals are around 15 minutes followed by 60 minutes. Looking at individual days, it can be seen that the sampling interval is greater during the day than at night. Probably because the wild boars are mostly asleep during the day and to save power at the receiver.
 
-## Task 3 Deriving movement parameters I: Speed
+## Task 3: Deriving movement parameters I: Speed
 ```{r}
 E1 <- wildschwein_BE$E[1]
 E2 <- wildschwein_BE$E[2]
@@ -69,3 +70,94 @@ wildschwein_BE <- wildschwein_BE |>
 
 hist(log10(wildschwein_BE$speed_ms), 100)
 ```
+
+## Task 4: Cross-scale movement analysis
+
+```{r}
+caro <- read_delim("caro60.csv")
+caro_3 <- caro %>%
+ filter(row_number() %% 3 == 1)
+caro_6 <- caro %>%
+ filter(row_number() %% 6 == 1)
+caro_9 <- caro %>%
+ filter(row_number() %% 9 == 1)
+```
+
+### Calculate caro
+```{r}
+caro <- caro |> 
+  group_by(TierName) |> 
+  mutate(timelag = as.numeric((difftime(lead(DatetimeUTC), DatetimeUTC))*60)) |> #calculate timelag
+  mutate(steplength_m = sqrt((E-lead(E))^2 + (N-lead(N))^2)) |> # calculate steplength in m
+  mutate(speed_ms = steplength_m / timelag) # calculate speed in m/s
+```
+
+### Calculate caro_3
+```{r}
+caro_3 <- caro_3 |> 
+  group_by(TierName) |> 
+  mutate(timelag = as.numeric((difftime(lead(DatetimeUTC), DatetimeUTC))*60)) |> #calculate timelag
+  mutate(steplength_m = sqrt((E-lead(E))^2 + (N-lead(N))^2)) |> # calculate steplength in m
+  mutate(speed_ms = steplength_m / timelag) |> # calculate speed in m/s
+  mutate(TierName = "Caro_3")
+```
+
+### Calculate caro_6
+```{r}
+caro_6 <- caro_6 |> 
+  group_by(TierName) |> 
+  mutate(timelag = as.numeric((difftime(lead(DatetimeUTC), DatetimeUTC))*60)) |> #calculate timelag
+  mutate(steplength_m = sqrt((E-lead(E))^2 + (N-lead(N))^2)) |> # calculate steplength in m
+  mutate(speed_ms = steplength_m / timelag) |> # calculate speed in m/s 
+  mutate(TierName = "Caro_6")
+```
+
+### Calculate caro_9
+```{r}
+caro_9 <- caro_9 |> 
+  group_by(TierName) |> 
+  mutate(timelag = as.numeric((difftime(lead(DatetimeUTC), DatetimeUTC))*60)) |> #calculate timelag
+  mutate(steplength_m = sqrt((E-lead(E))^2 + (N-lead(N))^2)) |> # calculate steplength in m
+  mutate(speed_ms = steplength_m / timelag) |> # calculate speed in m/s
+  mutate(TierName = "Caro_9")
+```
+
+### Compare the speeds visually in a line plot 
+```{r}
+ggplot() +
+  geom_line(caro, mapping = aes(DatetimeUTC, speed_ms, colour = TierName)) +
+  geom_line(caro_3, mapping = aes(DatetimeUTC, speed_ms, colour = TierName)) +
+  geom_line(caro_6, mapping = aes(DatetimeUTC, speed_ms, colour = TierName)) +
+  geom_line(caro_9, mapping = aes(DatetimeUTC, speed_ms, colour = TierName)) +
+  labs(title = "Comparing derived speed at different sampling intervals")
+```
+As the temporal granularity decreases, Caro's speed decreases (or is smoothed). Short rapid changes in velocity are not captured at higher granularity. As a result, important information can be lost. 
+
+### Visualize the trajectories in a map 
+```{r}
+ggplot() +
+  geom_path(caro, mapping = aes(E, N, colour = TierName)) +
+  geom_point(caro, mapping = aes(E, N, colour = TierName)) +
+  geom_path(caro_3, mapping = aes(E, N, colour = TierName)) +
+  geom_point(caro_3, mapping = aes(E, N, colour = TierName)) +
+  labs(title = "Comparing original- with 3 minutes-resampled data")
+```
+
+```{r}
+ggplot() +
+  geom_path(caro, mapping = aes(E, N, colour = TierName)) +
+  geom_point(caro, mapping = aes(E, N, colour = TierName)) +
+  geom_path(caro_6, mapping = aes(E, N, colour = TierName)) +
+  geom_point(caro_6, mapping = aes(E, N, colour = TierName)) +
+  labs(title = "Comparing original- with 6 minutes-resampled data")
+```
+
+```{r}
+ggplot() +
+  geom_path(caro, mapping = aes(E, N, colour = TierName)) +
+  geom_point(caro, mapping = aes(E, N, colour = TierName)) +
+  geom_path(caro_9, mapping = aes(E, N, colour = TierName)) +
+  geom_point(caro_9, mapping = aes(E, N, colour = TierName)) +
+  labs(title = "Comparing original- with 9 minutes-resampled data")
+```
+
