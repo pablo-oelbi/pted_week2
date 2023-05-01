@@ -6,6 +6,7 @@ library("sf")
 library("dplyr")
 library("ggplot2")
 library("tmap")
+library("zoo")
 ```
 ## Task 1: Import your data
 ```{r}
@@ -159,5 +160,31 @@ ggplot() +
   geom_path(caro_9, mapping = aes(E, N, colour = TierName)) +
   geom_point(caro_9, mapping = aes(E, N, colour = TierName)) +
   labs(title = "Comparing original- with 9 minutes-resampled data")
+```
+
+## Task 5: Deriving movement parameters II: Rolling window functions
+### Familiarise yourself with this function by working on some dummy data
+```{r}
+example <- rnorm(10)
+rollmean(example, k = 3, fill = NA, align = "left")
+rollmean(example, k = 4, fill = NA, align = "left")
+```
+
+### Now run rollmean on the speed variable of the subset (caro)
+```{r}
+caro$rm1 <- rollmean(caro$speed_ms, k = 1, fill = NA, align = "left")
+caro$rm3 <- rollmean(caro$speed_ms, k = 3, fill = NA, align = "left")
+caro$rm6 <- rollmean(caro$speed_ms, k = 6, fill = NA, align = "left")
+caro$rm9 <- rollmean(caro$speed_ms, k = 9, fill = NA, align = "left")
+```
+
+```{r}
+ggplot() + 
+  geom_path(data=caro, aes(x = DatetimeUTC, y = rm1, color= "rm1"))+
+  geom_path(data=caro, aes(x = DatetimeUTC, y = rm3, color= "rm3"))+
+  geom_path(data=caro, aes(x = DatetimeUTC, y = rm6, color= "rm6"))+
+  geom_path(data=caro, aes(x = DatetimeUTC, y = rm9, color= "rm9"))+
+  theme_classic() +
+  labs(x="Zeitpunkt",y="rollmean")
 ```
 
