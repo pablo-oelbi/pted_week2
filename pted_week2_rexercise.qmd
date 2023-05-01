@@ -52,3 +52,20 @@ wildschwein_BE |>
   geom_line()
 ```
 A: There are different temporal sampling intervals. They vary between a few minutes and over an hour. Most of the sampling intervals are around 15 minutes followed by 60 minutes. Looking at individual days, it can be seen that the sampling interval is greater during the day than at night. Probably because the wild boars are mostly asleep during the day and to save power at the receiver.
+
+## Task 3 Deriving movement parameters I: Speed
+```{r}
+E1 <- wildschwein_BE$E[1]
+E2 <- wildschwein_BE$E[2]
+N1 <- wildschwein_BE$N[1]
+N2 <- wildschwein_BE$N[2]
+  
+wildschwein_BE <- wildschwein_BE |> 
+  group_by(TierName) |> 
+  mutate(steplength_m = sqrt((E-lead(E))^2 + (N-lead(N))^2))
+
+wildschwein_BE <- wildschwein_BE |> 
+  mutate(speed_ms = steplength_m / timelag)
+
+hist(log10(wildschwein_BE$speed_ms), 100)
+```
